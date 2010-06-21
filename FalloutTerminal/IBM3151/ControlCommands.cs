@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace FalloutTerminal
 {
@@ -100,25 +101,24 @@ namespace FalloutTerminal
 			this.Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.S }, 0, 3);
 		}
 		
-		public void MoveCursor(CursorDirections direction) {
+		public void WriteMoveCursor(CursorDirections direction) {
+			Write(MoveCursor(direction));
+		}
+				
+		public string MoveCursor(CursorDirections direction) {
 			switch(direction) {
 			case CursorDirections.Home:
-				this.Write(new byte[] { Ascii.ESC, Ascii.H }, 0, 2);
-				return;
+				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.H });
 			case CursorDirections.Up:
-				this.Write(new byte[] { Ascii.ESC, Ascii.A }, 0, 2);
-				return;
+				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.A }, 0, 2);
 			case CursorDirections.Down:
-				this.Write(new byte[] { Ascii.ESC, Ascii.B }, 0, 2);
-				return;
+				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.B }, 0, 2);
 			case CursorDirections.Left:
-				this.Write(new byte[] { Ascii.ESC, Ascii.C }, 0, 2);
-				return;
+				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.C }, 0, 2);
 			case CursorDirections.Right:
-				this.Write(new byte[] { Ascii.ESC, Ascii.D }, 0, 2);
-				return;
+				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.D }, 0, 2);
 			}
-			
+			throw new NotSupportedException();
 		}
 		
 		public void Index() { Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.M }, 0, 3); }

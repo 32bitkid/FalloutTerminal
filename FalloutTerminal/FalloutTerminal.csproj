@@ -38,6 +38,7 @@
     <Compile Include="IBM3151\SerialTerminal.cs" />
     <Compile Include="IBM3151\ControlCommands.cs" />
     <Compile Include="IBM3151\Ascii.cs" />
+    <Compile Include="IBM3151\AttributeCommands.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
