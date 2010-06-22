@@ -16,12 +16,28 @@ namespace FalloutTerminal
 		Hidden = 16,
 		Op = 32,
 		NoOp = 64,
+		
+		NotIntense = 23
 	}
 	
 	public enum OperationSpecifier {
 		Replacement = (3 << 5),
 		LogicalOR = (3 << 5) | 1,
 		LogicalAND = (3 << 5) | 2,
+	}
+	
+	public partial struct Commands {		
+		public static readonly string Intense = Encoding.ASCII.GetString(new byte[] {
+			Ascii.ESC, Ascii.Four,
+			(byte)(CharacterAttributes.Intense | CharacterAttributes.Op),
+			(byte)OperationSpecifier.LogicalOR
+		});
+		
+		public static readonly string NotIntense = Encoding.ASCII.GetString(new byte[] {
+			Ascii.ESC, Ascii.Four,
+			(byte)(CharacterAttributes.NotIntense | CharacterAttributes.Op),
+			(byte)OperationSpecifier.LogicalAND
+		});
 	}
 
 	public partial class SerialTerminal

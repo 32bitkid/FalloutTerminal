@@ -37,6 +37,23 @@ namespace FalloutTerminal
 		}
 
 	}
+	
+	public partial struct Commands {		
+		public readonly static string LockKeyboard = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.Colon });
+		public readonly static string UnlockKeyboard = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.Semicolon});
+		public readonly static string Reset = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.SP, Ascii.S });
+		public readonly static string CursorHome = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.H });
+		public readonly static string CursorUp = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.A });
+		public readonly static string CursorDown = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.B });
+		public readonly static string CursorLeft = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.C });
+		public readonly static string CursorRight = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.D });
+		public readonly static string Index = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.SP, Ascii.M });
+		public readonly static string ReverseIndex = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.M });
+		public readonly static string GetCursor = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.Five });
+		public readonly static string ClearAll = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.L });
+		public readonly static string GetTerminalId = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.Six });
+	}
+	
 
 	public partial class SerialTerminal
 	{
@@ -73,60 +90,47 @@ namespace FalloutTerminal
 			}
 			
 			set {
-				throw new NotSupportedException();
+				this.Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.Seven} ,0, 3);
+				
+				var length = ReadResponse(_buffer, 0);
+				
+				if(_buffer[0] != Ascii.ESC && _buffer[1] != Ascii.SP && _buffer[2] != Ascii.Seven)
+					throw new Exception("Invalid Reply");
+				
+				_buffer[2] = Ascii.Nine;
+				_buffer[3] = (byte)((_buffer[3] & ~3) | ((byte)value));
+				
+				this.Write(_buffer, 0, length);
 			}
 		}
 		
 		public string TerminalId { 
 			get {
-				Write(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.Six }, 0, 3);
+				Write(Commands.GetTerminalId);
+				var length = ReadResponse(_buffer, 0);
 				return string.Empty;
 			}
 		}
 		
-		public bool KeyboardLock { 
-			get {
-				throw new NotSupportedException();
-			}
-			
-			set {
-				if(value)
-					this.Write(new byte[] { Ascii.ESC, Ascii.Colon }, 0, 2);
-				else
-					this.Write(new byte[] { Ascii.ESC, Ascii.Semicolon},0, 2);
-			}
-		}
-		
-		public void Reset() {
-			this.Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.S }, 0, 3);
-		}
-		
-		public void WriteMoveCursor(CursorDirections direction) {
-			Write(MoveCursor(direction));
-		}
-				
 		public string MoveCursor(CursorDirections direction) {
 			switch(direction) {
 			case CursorDirections.Home:
-				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.H });
+				return Commands.CursorHome;
 			case CursorDirections.Up:
-				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.A }, 0, 2);
+				return Commands.CursorUp;
 			case CursorDirections.Down:
-				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.B }, 0, 2);
+				return Commands.CursorDown;
 			case CursorDirections.Left:
-				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.C }, 0, 2);
+				return Commands.CursorLeft;
 			case CursorDirections.Right:
-				return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.D }, 0, 2);
+				return Commands.CursorRight;
 			}
 			throw new NotSupportedException();
 		}
 		
-		public void Index() { Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.M }, 0, 3); }
-		public void ReverseIndex() { Write(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.M }, 0, 3); } 
 		
 		public CursorPosition GetCursorPosition() {
-			
-			Write(new byte[] { Ascii.ESC, Ascii.Five },0,2 );
+			Write( Commands.GetCursor);
 			ReadResponse(_buffer, 0);
 			if(_buffer[1] == Ascii.Y)
 				return new CursorPosition() { Row = _buffer[2] - 0x1F, Column = _buffer[3] - 0x1F };
@@ -156,17 +160,11 @@ namespace FalloutTerminal
 			byte colLow = (byte)(((column - 1) % 32) + 0x40);
 			byte colHi = (byte)(((column - 1) / 32) + 0x20);
 			
-			Console.WriteLine(BitConverter.ToString(new byte[] { Ascii.ESC, Ascii.y, rowHi, rowLow, colHi, colLow}));
 			Write(new byte[] { Ascii.ESC, Ascii.y, rowHi, rowLow, colHi, colLow}, 0, 6);
 		}
 		
 		public void SetCursorPosition(CursorPosition position) {
 			SetCursorPosition(position.Row, position.Column);
-		}
-		
-		public void ClearAll() {
-			Write(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.L }, 0, 3);
-		}
-		
+		}		
 	}
 }
