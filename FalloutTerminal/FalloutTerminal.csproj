@@ -35,13 +35,21 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="IBM3151\SerialTerminal.cs" />
-    <Compile Include="IBM3151\ControlCommands.cs" />
-    <Compile Include="IBM3151\Ascii.cs" />
-    <Compile Include="IBM3151\AttributeCommands.cs" />
+    <Compile Include="Communications\IBM3151\AttributeCommands.cs" />
+    <Compile Include="Communications\IBM3151\ControlCommands.cs" />
+    <Compile Include="Communications\IBM3151\SerialTerminal.cs" />
+    <Compile Include="Communications\FakeConsoleSerialPort.cs" />
+    <Compile Include="Communications\ISerialConnection.cs" />
+    <Compile Include="Communications\SerialPortWrapper.cs" />
+    <Compile Include="Communications\Ascii.cs" />
+    <Compile Include="RobcoIndustriesTermlink\IRobcoIndustriesTermlinkProtocol.cs" />
+    <Compile Include="RobcoIndustriesTermlink\Strings.cs" />
+    <Compile Include="RobcoIndustriesTermlink\V300.cs" />
+    <Compile Include="RobcoIndustriesTermlink\V300Parser.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Folder Include="IBM3151\" />
+    <Folder Include="Communications\" />
+    <Folder Include="RobcoIndustriesTermlink\" />
   </ItemGroup>
 </Project>

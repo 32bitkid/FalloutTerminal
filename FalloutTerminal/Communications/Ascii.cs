@@ -1,7 +1,7 @@
 
 using System;
 
-namespace FalloutTerminal
+namespace FalloutTerminal.Communications
 {
 	public abstract class Ascii {
 		public const byte NUL = 0;
