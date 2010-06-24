@@ -1,14 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
+using FalloutTerminal.Communications;
 
-namespace FalloutTerminal
+namespace FalloutTerminal.RobcoIndustriesTermlink
 {
     public interface IRobcoIndustriesTermlinkProtocol
     {
-        //StreamWriter OutputStream { get; }
-        //StreamReader InputStream { get; }
-        void Boot();
+        ISerialConnection Connection { get;  }
+        void Boot(V300.RunModes mode);
     }
 }

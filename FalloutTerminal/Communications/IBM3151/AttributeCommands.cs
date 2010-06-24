@@ -5,6 +5,7 @@ using System.Text;
 namespace FalloutTerminal.Communications
 {
 	public partial class IBM3151 { 
+
 		[Flags]
 		public enum CharacterAttributes
 		{
@@ -17,7 +18,8 @@ namespace FalloutTerminal.Communications
 			Op = 32,
 			NoOp = 64,
 			
-			NotIntense = 23
+			NotIntense = 23,
+            NotBlink = 27,
 		}
 		
 		public enum OperationSpecifier {
@@ -26,7 +28,7 @@ namespace FalloutTerminal.Communications
 			LogicalAND = (3 << 5) | 2,
 		}
 		
-		public partial struct Commands {		
+		public abstract partial class Commands {		
 			public static readonly string Intense = Encoding.ASCII.GetString(new byte[] {
 				Ascii.ESC, Ascii.Four,
 				(byte)(CharacterAttributes.Intense | CharacterAttributes.Op),
@@ -38,27 +40,13 @@ namespace FalloutTerminal.Communications
 				(byte)(CharacterAttributes.NotIntense | CharacterAttributes.Op),
 				(byte)OperationSpecifier.LogicalAND
 			});
+
+            public static string SetCharacterAttribute(CharacterAttributes attributes)
+            {
+                var pa = (byte)(attributes | CharacterAttributes.NoOp);
+                return Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.Four, pa });
+            }
 		}
 	
-		public partial class SerialTerminal
-		{
-			public bool Intense {
-				set {
-					
-					byte pa = (byte)(CharacterAttributes.Intense | CharacterAttributes.Op);
-					byte op = (byte)((value) ? OperationSpecifier.LogicalOR : OperationSpecifier.LogicalAND);
-					                 
-					if(value) 
-						Write(new byte[] { Ascii.ESC, Ascii.Four, pa, op }, 0, 4);			
-					else
-						Write(new byte[] { Ascii.ESC, Ascii.Four, (byte)~pa, op }, 0, 4);			
-				}
-			}
-			
-			public string SetCharacterAttribute(CharacterAttributes attributes) {
-				var pa = (byte)(attributes | CharacterAttributes.NoOp);
-				return Encoding.ASCII.GetString(new byte[] {Ascii.ESC, Ascii.Four, pa });
-			}
-		}
 	}
 }

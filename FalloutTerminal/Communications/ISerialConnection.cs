@@ -2,7 +2,7 @@ using System;
 
 namespace FalloutTerminal.Communications
 {
-    public interface ISerialConnection
+    public interface ISerialConnection : IDisposable
     {
         void Write(byte[] buffer, int offset, int count);
         void Write(String text);

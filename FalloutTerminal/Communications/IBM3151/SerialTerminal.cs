@@ -1,4 +1,3 @@
-
 using System;
 using System.IO.Ports;
 
@@ -13,7 +12,9 @@ namespace FalloutTerminal.Communications
 			public SerialTerminal(string portName, int baudRate, Parity parity, int dataBits, StopBits stopBits)
 				:base(portName, baudRate, parity, dataBits, stopBits)
 			{
-				this.Open();
+				Open();
+                Handshake = Handshake.XOnXOff;
+                OperatingMode = IBM3151.OperatingModes.Echo;
 			}
 			
 			private int ReadResponse(byte[] buffer, int index) {

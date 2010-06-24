@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using FalloutTerminal.Communications;
 
 namespace FalloutTerminal.RobcoIndustriesTermlink
 {
-	public abstract class Strings {
+	public abstract class StaticMessages {
         public const string ComputersBack = "Back";
         public const string ComputersHeader1 = "ROBCO INDUSTRIES UNIFIED OPERATING SYSTEM";
         public const string ComputersHeader2 = "COPYRIGHT 2075-2077 ROBCO INDUSTRIES";
@@ -20,7 +21,6 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
         public const string HackingHeader = "ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL";
         public const string HackingHeader2 = "ENTER PASSWORD NOW";
         public const string HackingHeader3 = "ATTEMPT(S) LEFT:";
-        public const string NormalBootMessage = "WELCOME TO ROBCO INDUSTRIES (TM) TERMLINK\r\n\n";
         public const string HackingIntro02 = "SET TERMINAL/INQUIRE";
         public const string HackingIntro03 = "\r\nRIT-V300\r\n\r\n";
         public const string HackingIntro04 = "SET FILE/PROTECTION=OWNER:RWED ACCOUNTS.F";
@@ -47,5 +47,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
         public const string TerminalServerText9 = "-Server 9-";
 		public const string BadCommand = "BAD COMMAND OR FILE NAME\r\n\r\n";
 		public const string AccessDenied = "ACCESS DENIED\r\n\r\n";
+
+        public static readonly string NormalBootMessage = IBM3151.Commands.ClearAll + IBM3151.Commands.Beep + "WELCOME TO ROBCO INDUSTRIES (TM) TERMLINK\r\n\n";
 	}
 }

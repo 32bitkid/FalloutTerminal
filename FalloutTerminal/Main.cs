@@ -3,6 +3,7 @@ using System.IO.Ports;
 using System.Threading;
 using System.Text;
 using FalloutTerminal.Communications;
+using FalloutTerminal.RobcoIndustriesTermlink;
 
 namespace FalloutTerminal
 {
@@ -20,13 +21,10 @@ namespace FalloutTerminal
 			
 			Console.WriteLine ("Starting!");
 			
-			using(var s = new IBM3151.SerialTerminal("/dev/ttyS0", 38400, Parity.None, 8, StopBits.One))
-			using(var v300 = new RobcoIndustriesTermlink.V300(s)) {
-				
-				s.Handshake = Handshake.XOnXOff;
-				s.OperatingMode = IBM3151.OperatingModes.Echo;
-				
-				v300.Boot();
+			//using(var s = new IBM3151.SerialTerminal("/dev/ttyS0", 38400, Parity.None, 8, StopBits.One))
+            using(var s = new Fake3151Console())
+			using(var v300 = new V300(s)) {
+			    v300.Boot(V300.RunModes.DebugAccounts);
 			}
 			
 		skip:

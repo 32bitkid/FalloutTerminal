@@ -39,7 +39,7 @@ namespace FalloutTerminal.Communications
 	
 		}
 		
-		public partial struct Commands {		
+		public abstract partial class Commands {		
 			public readonly static string LockKeyboard = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.Colon });
 			public readonly static string UnlockKeyboard = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.Semicolon});
 			public readonly static string Reset = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.SP, Ascii.S });
@@ -55,6 +55,30 @@ namespace FalloutTerminal.Communications
 			public readonly static string GetTerminalId = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.Six });
 			public readonly static string Prompt = Encoding.ASCII.GetString(new byte[] { Ascii.CR, Ascii.ESC, Ascii.I, Ascii.GreaterThan });
 			public readonly static string ClearEOL = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.I });
+            public readonly static string Beep = Encoding.ASCII.GetString(new [] { Ascii.Bell }, 0, 1);
+
+            public static string SetCursorPosition(int row, int column)
+            {
+                if (row > 95 || column > 95)
+                    return SetCursorPositionEx(row, column);
+
+                return Encoding.ASCII.GetString(new [] { Ascii.ESC, Ascii.Y, (byte)(row + 0x20), (byte)(column + 0x20) }, 0, 4);
+            }
+
+            public static string SetCursorPositionEx(int row, int column)
+            {
+                var rowLow = (byte)(((row - 1) % 32) + 0x20);
+                var rowHi = (byte)(((row - 1) / 32) + 0x20);
+                var colLow = (byte)(((column - 1) % 32) + 0x40);
+                var colHi = (byte)(((column - 1) / 32) + 0x20);
+
+                return Encoding.ASCII.GetString(new [] { Ascii.ESC, Ascii.y, rowHi, rowLow, colHi, colLow }, 0, 6);
+            }
+
+            public static string SetCursorPosition(CursorPosition position)
+            {
+                return SetCursorPosition(position.Row, position.Column);
+            }	
 		}
 		
 	
@@ -62,9 +86,9 @@ namespace FalloutTerminal.Communications
 		{
 			public MachineModes MachineMode {
 				get {
-					this.Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.Seven} ,0, 3);
+					Write(new[] { Ascii.ESC, Ascii.SP, Ascii.Seven} ,0, 3);
 					
-					var length = ReadResponse(_buffer, 0);
+					ReadResponse(_buffer, 0);
 					
 					if(_buffer[0] != Ascii.ESC && _buffer[1] != Ascii.SP && _buffer[2] != Ascii.Seven)
 						throw new Exception("Invalid Reply");
@@ -82,9 +106,9 @@ namespace FalloutTerminal.Communications
 			
 			public OperatingModes OperatingMode {
 				get {
-					this.Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.Seven} ,0, 3);
+					Write(new[] { Ascii.ESC, Ascii.SP, Ascii.Seven} ,0, 3);
 					
-					var length = ReadResponse(_buffer, 0);
+					ReadResponse(_buffer, 0);
 					
 					if(_buffer[0] != Ascii.ESC && _buffer[1] != Ascii.SP && _buffer[2] != Ascii.Seven)
 						throw new Exception("Invalid Reply");
@@ -93,7 +117,7 @@ namespace FalloutTerminal.Communications
 				}
 				
 				set {
-					this.Write(new byte[] { Ascii.ESC, Ascii.SP, Ascii.Seven} ,0, 3);
+					Write(new[] { Ascii.ESC, Ascii.SP, Ascii.Seven} ,0, 3);
 					
 					var length = ReadResponse(_buffer, 0);
 					
@@ -103,7 +127,7 @@ namespace FalloutTerminal.Communications
 					_buffer[2] = Ascii.Nine;
 					_buffer[3] = (byte)((_buffer[3] & ~3) | ((byte)value));
 					
-					this.Write(_buffer, 0, length);
+					Write(_buffer, 0, length);
 				}
 			}
 			
@@ -146,29 +170,6 @@ namespace FalloutTerminal.Communications
 				
 				throw new NotSupportedException("Unknown Reply");
 			}
-			
-			public void SetCursorPosition(int row, int column) {
-				if(row > 95 || column > 95) 
-				{
-					SetCursorPositionEx(row, column);
-					return;
-				}
-				
-				Write(new byte[] { Ascii.ESC, Ascii.Y, (byte)(row + 0x20), (byte)(column + 0x20)}, 0, 4);
-			}
-			
-			public void SetCursorPositionEx(int row, int column) {
-				byte rowLow = (byte)(((row - 1) % 32) + 0x20);
-				byte rowHi = (byte)(((row - 1) / 32) + 0x20);
-				byte colLow = (byte)(((column - 1) % 32) + 0x40);
-				byte colHi = (byte)(((column - 1) / 32) + 0x20);
-				
-				Write(new byte[] { Ascii.ESC, Ascii.y, rowHi, rowLow, colHi, colLow}, 0, 6);
-			}
-			
-			public void SetCursorPosition(CursorPosition position) {
-				SetCursorPosition(position.Row, position.Column);
-			}		
 		}
 	}
 }

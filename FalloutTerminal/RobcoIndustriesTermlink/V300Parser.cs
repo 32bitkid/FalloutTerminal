@@ -40,7 +40,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 		
 		public string Parse(byte[] buffer, int length) {
 			var command = Clean(buffer, length);
-			Console.WriteLine(command);
+			//Console.WriteLine(command);
 			
 			if(SetCommand.IsMatch(command)) 
 				return ParseSet(command);
@@ -48,7 +48,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			if(RunCommand.IsMatch(command)) 
 				return ParseRun(command);
 			
-			return Strings.BadCommand;
+			return StaticMessages.BadCommand;
 		}
 		
 		private string ParseRun(string command) {
@@ -56,8 +56,8 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			var mode = match.Groups[1].ToString().ToUpper();
 			var file = match.Groups[2].ToString().ToUpper();
 			
-			Console.WriteLine(file);
-			Console.WriteLine(mode);
+			//Console.WriteLine(file);
+			//Console.WriteLine(mode);
 			
 			if(mode == "DEBUG" && file == "ACCOUNTS.F") {
 				if(RunDebugAccounts != null) {
@@ -67,11 +67,11 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 						return null;
 				}
 				
-				return Strings.AccessDenied;
+				return StaticMessages.AccessDenied;
 			}
 			
 				
-			return Strings.BadCommand;
+			return StaticMessages.BadCommand;
 		}
 		
 		private string ParseSet(string command) {
@@ -83,22 +83,22 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			
 			switch(cmd) {
 			case "TERMINAL/INQUIRE":
-				return Strings.HackingIntro03;
+				return StaticMessages.HackingIntro03;
 			case "FILE/PROTECTION":
 				e = new ParserActionEventArgs() { Options = options };
 				if(SetFileProtection != null) SetFileProtection(this, e);
-				return e.Success ? string.Empty : Strings.BadCommand;
+				return e.Success ? string.Empty : StaticMessages.BadCommand;
 			case "HALT RESTART/NORMAL":
 				e = new ParserActionEventArgs() { Options = options };
 				if(HaltRestartNormal != null) HaltRestartNormal(this, e);
-				return e.Success ? null : Strings.AccessDenied;
+				return e.Success ? null : StaticMessages.AccessDenied;
 			case "HALT RESTART/MAINT":
 				e = new ParserActionEventArgs() { Options = options };
 				if(HaltRestartMaint != null) HaltRestartMaint(this, e);
-				return e.Success ? null : Strings.AccessDenied;
+				return e.Success ? null : StaticMessages.AccessDenied;
 			}
 			
-			return Strings.BadCommand;				
+			return StaticMessages.BadCommand;				
 		}
 	}
 }

@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using FalloutTerminal.Communications;
 using System.Threading;
+using FalloutTerminal.RobcoIndustriesTermlink.Apps;
 
 namespace FalloutTerminal.RobcoIndustriesTermlink
 {
@@ -13,6 +14,9 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 		public enum RunModes { Normal, Maint, DebugAccounts, MainApp }
 		
 		private readonly ISerialConnection _serial;
+
+        public ISerialConnection Connection { get { return _serial; } }
+
 		private readonly V300Parser _parser;
 		
 		private RunModes _runMode = RunModes.Normal;
@@ -23,29 +27,29 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
         {
             _serial = serial;
 			_parser = new V300Parser();
-			_parser.HaltRestartMaint += Handle_parserHaltRestartMaint;
-			_parser.HaltRestartNormal += Handle_parserHaltRestartNormal; 
-			_parser.SetFileProtection += Handle_parserSetFileProtection;
-			_parser.RunDebugAccounts += Handle_parserRunDebugAccounts;
+			_parser.HaltRestartMaint += HandleParserHaltRestartMaint;
+			_parser.HaltRestartNormal += HandleParserHaltRestartNormal; 
+			_parser.SetFileProtection += HandleParserSetFileProtection;
+			_parser.RunDebugAccounts += HandleParserRunDebugAccounts;
         }
 
-        void Handle_parserHaltRestartNormal (object sender, ParserActionEventArgs e)
+        void HandleParserHaltRestartNormal (object sender, ParserActionEventArgs e)
         {
-			_runMode = RunModes.Normal;
-			Boot();
+			Boot(RunModes.Normal);
 			e.Success = true;        	
         }
 
-        void Handle_parserRunDebugAccounts (object sender, ParserActionEventArgs e)
+        void HandleParserRunDebugAccounts (object sender, ParserActionEventArgs e)
         {
        		if(_runMode != V300.RunModes.Maint || _accountsProtected) 
 				return;
 			
 			e.Success = true;
-			ShowDebugAccounts();
+
+            new DebugAccounts(this).Launch();
         }
 
-        void Handle_parserSetFileProtection (object sender, ParserActionEventArgs e)
+        void HandleParserSetFileProtection (object sender, ParserActionEventArgs e)
         {
      		if(new Regex(@"ACCOUNTS.F$", RegexOptions.IgnoreCase).IsMatch(e.Options)) {
 				e.Success = true;
@@ -53,26 +57,28 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			}
         }
 
-        void Handle_parserHaltRestartMaint (object sender, ParserActionEventArgs e)
+        void HandleParserHaltRestartMaint (object sender, ParserActionEventArgs e)
         {
-			_runMode = RunModes.Maint;
-			Boot();
+			Boot(RunModes.Maint);
 			e.Success = true;
         }
 
-        public void Boot()
+        public void Boot(RunModes runMode)
         {
-			switch(_runMode) {
+            _runMode = runMode;
+
+			switch(runMode) {
 			case RunModes.Maint:
-				_serial.Write(Strings.MaintainenceModeBootMessage);
+				_serial.Write(StaticMessages.MaintainenceModeBootMessage);
 				break;
+            case RunModes.DebugAccounts:
+                new DebugAccounts(this).Launch();
+			    return;
 			default:
-				_runMode = RunModes.Normal;
-				_serial.Write(new byte[] { Ascii.Bell }, 0, 1);
-				_serial.Write(IBM3151.Commands.ClearAll);
-	            _serial.Write(Strings.NormalBootMessage);
+	            _serial.Write(StaticMessages.NormalBootMessage);
 				break;				
 			}
+
 			Prompt();
         }
 		
@@ -97,52 +103,6 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 				_serial.Write(reply);
 				Prompt();
 			}
-		}
-		
-		public void ShowDebugAccounts() {
-			var sb = new StringBuilder();
-			
-			sb.Append(IBM3151.Commands.ClearAll);
-			sb.Append(IBM3151.Commands.Intense);
-			sb.Append("ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL\r\n");
-			sb.Append("ENTER PASSWORD NOW\r\n\n");
-			
-			sb.Append(IBM3151.Commands.NotIntense);
-			sb.Append("4 ATTEMPT(S) LEFT: ");
-			_serial.Write(sb.ToString());
-			sb.Length = 0;
-			
-			_serial.Write(IBM3151.Commands.Intense);
-			_serial.Write(new byte[] { 254, Ascii.SP, 254, Ascii.SP, 254, Ascii.SP, 254 }, 0, 7);
-			_serial.Write(IBM3151.Commands.NotIntense);
-			
-			sb.Append("\r\n\n");
-			
-			
-			for(var i = 0; i < 16; i++) {
-				sb.AppendFormat("0x{0:X4}", i*12 + 0xF4F0);
-				sb.Append(" ");
-				
-				sb.Append(IBM3151.Commands.Intense);
-				for(var j=0; j < 12; j++)
-					sb.Append((char)rnd.Next(33,126));
-				sb.Append("   ");
-				sb.Append(IBM3151.Commands.NotIntense);
-				
-				
-				sb.AppendFormat("0x{0:X4} ", i*12 + 0XF4F0 + 16 * 12);
-	
-				sb.Append(IBM3151.Commands.Intense);
-				for(var j=0; j < 12; j++)
-					sb.Append((char)rnd.Next(33,126));
-				sb.Append(IBM3151.Commands.NotIntense);
-				
-				if(i != 15)
-					sb.Append("\r\n");
-			}
-			sb.Append("  >");
-			
-			_serial.Write(sb.ToString());
 		}
 		
 		public void Dispose ()

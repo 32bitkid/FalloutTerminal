@@ -42,5 +42,7 @@ namespace FalloutTerminal.Communications
         {
             return _serialPort.Read(buffer, offset, count);
         }
+
+        public void Dispose() { }
     }
 }
