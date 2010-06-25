@@ -9,9 +9,6 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 {
     class PasswordMemoryDump
     {
-		public event EventHandler<EventArgs> Lockout;
-		public event EventHandler<EventArgs> PasswordGuessed;
-		
         private static readonly char[]
             Junk = new[] {
                 '!', '"', '\'', '$', '%', '#', '^', '&',
@@ -68,7 +65,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
                                      return false;
                                  var n = CorrectPassword.Where((t, i) => word[i] == t).Count();
                                  return n == 5;
-                             }).OrderBy(a => Guid.NewGuid()).Take(1));			
+                             }).OrderBy(a => Guid.NewGuid()).Take(1));
 			
             wordlist.Add(CorrectPassword);
             wordlist.OrderBy(a => Guid.NewGuid());
@@ -208,18 +205,30 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
             _termlink.Connection.Write(pos + (char) Ascii.BS + '>' + new string(' ', 80 - 45) + pos);
 
 			var guess = _termlink.Connection.GetString();
+			
+			// If read sting is null then break.
+			if (guess == null) return;
 
             if (guess == _dump.CorrectPassword)
             {
+				_termlink.SetAdminPassword(_dump.CorrectPassword);
                 return;
             }
             else
             {
                 var correct = _dump.Check(guess);
+				Console.WriteLine(_dump.CorrectPassword);
 				Console.WriteLine(correct);
             }
 
             _attempts -= 1;
+			
+			if(_attempts == 0)
+			{
+				_termlink.Lockout();	
+				return;
+			}
+			
             UpdateAttempts();
             
 

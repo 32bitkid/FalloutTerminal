@@ -6,5 +6,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
     {
         ISerialConnection Connection { get;  }
         void Boot(V300.RunModes mode);
+		void SetAdminPassword(string password);
+		void Lockout();
     }
 }

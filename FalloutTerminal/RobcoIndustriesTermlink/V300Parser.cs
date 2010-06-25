@@ -16,39 +16,40 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 		public event EventHandler<ParserActionEventArgs> HaltRestartNormal;
 		public event EventHandler<ParserActionEventArgs> SetFileProtection;
 		public event EventHandler<ParserActionEventArgs> RunDebugAccounts;
+		public event EventHandler<ParserActionEventArgs> LogonAdmin;
 		
 		private static Regex SetCommand = new Regex(@"^SET\s+(\w[\w ]*/\w+)(=(.*))?$", RegexOptions.IgnoreCase);
 		private static Regex RunCommand = new Regex(@"^RUN\s+(\w*)/?(.+)?$", RegexOptions.IgnoreCase);
+		private static Regex LogonCommand = new Regex(@"^LOGON\s+(\w*)?$", RegexOptions.IgnoreCase);
 		
 		public V300Parser() { }
 		
-		private string Clean(byte[] buffer, int length) {
-			int startIndex = 0, pos, min;
-			
-			while(buffer[startIndex] == Ascii.BS)
-				++startIndex;
-			
-			while((pos = Array.IndexOf(buffer, Ascii.BS)) != -1) {
-				
-				min = pos == 0 ? 0 : pos - 1;
-				Array.Copy(buffer, pos + 1, buffer, min, length);
-				length -= pos == 0 ? 1 : 2;
-			}
-			
-			return Encoding.ASCII.GetString(buffer, startIndex, length).Trim();
-		}
-		
-		public string Parse(byte[] buffer, int length) {
-			var command = Clean(buffer, length);
-			//Console.WriteLine(command);
-			
+		public string Parse(string command) {
 			if(SetCommand.IsMatch(command)) 
 				return ParseSet(command);
 			
 			if(RunCommand.IsMatch(command)) 
 				return ParseRun(command);
 			
+			if(LogonCommand.IsMatch(command))
+				return ParseLogon(command);
+			
+			if(command.StartsWith("DIR", StringComparison.CurrentCultureIgnoreCase))
+				return StaticMessages.LoginRequired;
+			
 			return StaticMessages.BadCommand;
+		}
+		
+		private string ParseLogon(string command) {
+			var match = LogonCommand.Match(command);
+			var user = match.Groups[1].ToString().ToUpper();
+			
+			if(user == "ADMIN" && LogonAdmin != null) {
+				LogonAdmin(this, new ParserActionEventArgs());
+				return null;
+			}
+			
+			return StaticMessages.BadUser;
 		}
 		
 		private string ParseRun(string command) {
@@ -64,7 +65,10 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 					var e = new ParserActionEventArgs();
 					RunDebugAccounts(this, e);
 					if(e.Success)
+					{
+						if(HaltRestartNormal != null) HaltRestartNormal(this, new ParserActionEventArgs());
 						return null;
+					}
 				}
 				
 				return StaticMessages.AccessDenied;

@@ -22,6 +22,8 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 		private RunModes _runMode = RunModes.Normal;
 		private bool _accountsProtected = true;
 		private Random rnd = new Random();
+		
+		private string _adminPassword = null;
 
         public V300(ISerialConnection serial)
         {
@@ -31,6 +33,51 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			_parser.HaltRestartNormal += HandleParserHaltRestartNormal; 
 			_parser.SetFileProtection += HandleParserSetFileProtection;
 			_parser.RunDebugAccounts += HandleParserRunDebugAccounts;
+			_parser.LogonAdmin += Handle_parserLogonAdmin;
+			_serial.Restart += HandleSerialRestart;
+        }
+		
+		public void SetAdminPassword(string password) {
+			_adminPassword = password;
+		}
+		
+		public void Lockout() {
+			_serial.Write(new string('\n', 25));
+			
+			_serial.Write(IBM3151.Commands.Intense + StaticMessages.HackingLockout3);
+			_serial.Write(StaticMessages.HackingLockout4 + IBM3151.Commands.NotIntense);
+			_serial.Write(new string('\n', 10));
+			
+			Thread.Sleep(TimeSpan.FromSeconds(10));
+		}
+
+        void Handle_parserLogonAdmin (object sender, ParserActionEventArgs e)
+        {
+			for(var _attempts = 4; _attempts >= 0; _attempts--) {
+     			_serial.Write("\r\n" + StaticMessages.HackingHeader2 + "\r\n\r\n");
+				_serial.Write(IBM3151.Commands.Prompt);
+				var guess = _serial.GetString(true);
+				
+				if(_adminPassword != null && guess == _adminPassword) 
+				{
+					return;
+				}
+				
+				if(_attempts != 0) {
+					_serial.Write("\n");
+					_serial.Write(string.Format(StaticMessages.InvalidPassword, _attempts));
+				}
+			}
+			
+			Lockout();
+			Boot(V300.RunModes.Normal);
+			
+			
+        }
+
+        void HandleSerialRestart (object sender, EventArgs e)
+        {
+			Boot(RunModes.Normal);		
         }
 
         void HandleParserHaltRestartNormal (object sender, ParserActionEventArgs e)
@@ -85,24 +132,16 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 		public void Prompt() {
 			_serial.Write(IBM3151.Commands.Prompt);
 			
-			var command = new byte[255];
-			int index = 0, cmdLen = 0;
-			var readBuffer = new byte[80];
-			
-			do {
-				//while(_serial.BytesToRead == 0) { Thread.Sleep(500); }
-				var readLength = _serial.Read(command, index, command.Length - index);
-				_serial.Write(command, index, readLength);
-				index += readLength;
-			} while((cmdLen = Array.IndexOf(command, Ascii.CR)) == -1);
-			
+			var command = _serial.GetString();
 			_serial.Write("\n");
 			
-			var reply = _parser.Parse(command, cmdLen);
-			if(reply != null) {
-				_serial.Write(reply);
-				Prompt();
-			}
+			var reply = _parser.Parse(command);
+			
+			if(reply == null) 
+				return;
+			
+			_serial.Write(reply);
+			Prompt();
 		}
 		
 		public void Dispose ()

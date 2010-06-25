@@ -116,8 +116,12 @@ namespace FalloutTerminal.Communications
             return 1;
         }
 		
-		public string GetString() {
+		public string GetString(bool masked) {
 			throw new NotImplementedException();
+		}
+		
+		public string GetString() {
+			return GetString(false);
 		}
 
         public void Dispose()

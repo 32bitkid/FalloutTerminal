@@ -14,5 +14,6 @@ namespace FalloutTerminal.Communications
 		int BytesToRead { get; }
 		
 		string GetString();
+		string GetString(bool masked);
     }
 }

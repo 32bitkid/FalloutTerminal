@@ -45,8 +45,12 @@ namespace FalloutTerminal.Communications
             return _serialPort.Read(buffer, offset, count);
         }
 		
-		public string GetString() {
+		public string GetString(bool masked) {
 			throw new NotImplementedException();
+		}
+		
+		public string GetString() {
+			return GetString(false);
 		}
 
         public void Dispose() { }

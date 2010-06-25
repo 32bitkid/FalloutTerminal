@@ -20,7 +20,9 @@ namespace FalloutTerminal.Communications
                 OperatingMode = IBM3151.OperatingModes.Echo;
 			}
 			
-			public string GetString() {
+			public string GetString() { return GetString(false); }
+			
+			public string GetString(bool masked) {
 				byte[] command = new byte[255], cleanBuffer = new byte[80];
 	            int index = 0, cmdLen = 0;
 	            var cursorPosition = 0;
@@ -29,7 +31,11 @@ namespace FalloutTerminal.Communications
 	            {
 	                //while(_serial.BytesToRead == 0) { Thread.Sleep(500); }
 	                var readLength = Read(command, index, command.Length - index);
-	                Write(command, index, readLength);
+					if(masked)
+						Write(new string('*', readLength));
+					else
+	                	Write(command, index, readLength);
+					
 					
 					//Console.WriteLine(BitConverter.ToString(command, index, readLength));
 					
@@ -40,8 +46,9 @@ namespace FalloutTerminal.Communications
 						if(Restart != null && command[escapeIndex + 1] == Ascii.O)
 						{
 							Restart(this, EventArgs.Empty);
-							return string.Empty;
+							return null;
 						}
+						searchStart = escapeIndex + 1;
 					}
 					
 					
@@ -49,6 +56,9 @@ namespace FalloutTerminal.Communications
 	                index += readLength;
 	
 	            } while ((cmdLen = Array.IndexOf(command, Ascii.CR)) == -1);
+				
+				if(masked)
+					Write(new [] { Ascii.BS, Ascii.SP, Ascii.CR, Ascii.LF}, 0, 4);
 	
 	            var len = Unescape(command, 0, cmdLen, cleanBuffer);
 	            return Encoding.ASCII.GetString(cleanBuffer, 0, len).ToUpper();
@@ -67,7 +77,7 @@ namespace FalloutTerminal.Communications
 	                }
 	
 	                if (command[i] == 0x08)
-	                    cleanedLength--;
+						cleanedLength -= (cleanedLength == 0) ? 0 : 1;
 	            }
 	
 	            return cleanedLength;

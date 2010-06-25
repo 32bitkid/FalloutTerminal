@@ -21,10 +21,10 @@ namespace FalloutTerminal
 			
 			Console.WriteLine ("Starting!");
 			
-			//using(var s = new IBM3151.SerialTerminal("/dev/ttyS0", 38400, Parity.None, 8, StopBits.One))
-            using(var s = new Fake3151Console())
+			using(var s = new IBM3151.SerialTerminal("/dev/ttyS0", 38400, Parity.None, 8, StopBits.One))
+            //using(var s = new Fake3151Console())
 			using(var v300 = new V300(s)) {
-			    v300.Boot(V300.RunModes.DebugAccounts);
+			    v300.Boot(V300.RunModes.Normal);
 			}
 			
 		skip:

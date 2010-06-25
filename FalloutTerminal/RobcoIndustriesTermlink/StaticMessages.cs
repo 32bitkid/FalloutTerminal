@@ -29,8 +29,8 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
         public const string HackingIntro13 = "RUN DEBUG/ACCOUNTS.F";
         public const string HackingLockout1 = "Lockout in";
         public const string HackingLockout2 = "progress.";
-        public const string HackingLockout3 = "TERMINAL LOCKED";
-        public const string HackingLockout4 = "PLEASE CONTACT AN ADMINISTRATOR";
+        public const string HackingLockout3 = "TERMINAL LOCKED\r\n";
+        public const string HackingLockout4 = "PLEASE CONTACT AN ADMINISTRATOR\r\n";
         public const string HackingToleranceReset1 = "Allowance";
         public const string HackingToleranceReset2 = "replenished.";
         public const string HackingWarning = "!!! WARNING: LOCKOUT IMMINENT !!!";
@@ -47,7 +47,10 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
         public const string TerminalServerText9 = "-Server 9-";
 		public const string BadCommand = "BAD COMMAND OR FILE NAME\r\n\r\n";
 		public const string AccessDenied = "ACCESS DENIED\r\n\r\n";
+		public const string LoginRequired = "ACCESS DENIED: LOGON REQUIRED\r\n\r\n";
+		public const string BadUser = "ACCOUNT LOCKED OR INVALID USERNAME\r\n\r\n";
 
         public static readonly string NormalBootMessage = IBM3151.Commands.ClearAll + IBM3151.Commands.Beep + "WELCOME TO ROBCO INDUSTRIES (TM) TERMLINK\r\n\n";
+		public static readonly string InvalidPassword = IBM3151.Commands.Intense + "ACCESS DENIED:" + IBM3151.Commands.NotIntense + " {0} ATTEMPT(S) LEFT";
 	}
 }
