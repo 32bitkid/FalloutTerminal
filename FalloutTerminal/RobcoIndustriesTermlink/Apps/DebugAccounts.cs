@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -9,6 +9,9 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 {
     class PasswordMemoryDump
     {
+		public event EventHandler<EventArgs> Lockout;
+		public event EventHandler<EventArgs> PasswordGuessed;
+		
         private static readonly char[]
             Junk = new[] {
                 '!', '"', '\'', '$', '%', '#', '^', '&',
