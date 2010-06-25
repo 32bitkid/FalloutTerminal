@@ -62,7 +62,7 @@ namespace FalloutTerminal.Communications
                 if (row > 95 || column > 95)
                     return SetCursorPositionEx(row, column);
 
-                return Encoding.ASCII.GetString(new [] { Ascii.ESC, Ascii.Y, (byte)(row + 0x20), (byte)(column + 0x20) }, 0, 4);
+                return Encoding.ASCII.GetString(new [] { Ascii.ESC, Ascii.Y, (byte)((row + 0x1F)), (byte)(column + 0x1F) }, 0, 4);
             }
 
             public static string SetCursorPositionEx(int row, int column)
