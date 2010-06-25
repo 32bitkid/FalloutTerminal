@@ -42,20 +42,36 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 
         private void FillTable()
         {
-            var others = _dict.Where(delegate(string word)
+			var wordlist = new List<string>();
+            wordlist.AddRange(_dict.Where(delegate(string word)
                              {
                                  if (word == CorrectPassword)
                                      return false;
                                  var n = CorrectPassword.Where((t, i) => word[i] == t).Count();
-                                 return n > 1;
-                             }).OrderBy(a => Guid.NewGuid()).Take(_rows).ToList();
-
-
-            others.Add(CorrectPassword);
-            others.OrderBy(a => Guid.NewGuid());
+                                 return n > 2 && n < 5;
+                             }).OrderBy(a => Guid.NewGuid()).Take(10));
+			
+			wordlist.AddRange(_dict.Where(delegate(string word)
+                             {
+                                 if (word == CorrectPassword)
+                                     return false;
+                                 var n = CorrectPassword.Where((t, i) => word[i] == t).Count();
+                                 return n == 0;
+                             }).OrderBy(a => Guid.NewGuid()).Take(4));
+			
+			wordlist.AddRange(_dict.Where(delegate(string word)
+                             {
+                                 if (word == CorrectPassword)
+                                     return false;
+                                 var n = CorrectPassword.Where((t, i) => word[i] == t).Count();
+                                 return n == 5;
+                             }).OrderBy(a => Guid.NewGuid()).Take(1));			
+			
+            wordlist.Add(CorrectPassword);
+            wordlist.OrderBy(a => Guid.NewGuid());
 
             var index = 0;
-            var max = others.Count;
+            var max = wordlist.Count;
             var spacesLeft = _memory.Length - (max * (CorrectPassword.Length + 1));
             
             for(var i = 0; i< max; i++)
@@ -64,7 +80,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
                 spacesLeft -= skip;
                 index += skip;
 
-                others[i].CopyTo(0, _memory, index, CorrectPassword.Length);
+                wordlist[i].CopyTo(0, _memory, index, CorrectPassword.Length);
                 index += CorrectPassword.Length + 1;
             }
             
