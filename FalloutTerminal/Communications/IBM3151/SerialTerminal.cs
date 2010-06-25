@@ -8,6 +8,8 @@ namespace FalloutTerminal.Communications
 	
 		public partial class SerialTerminal : SerialPort, ISerialConnection
 		{
+			public event EventHandler<EventArgs> Restart;			
+			
 			private byte[] _buffer = new byte[65536];
 	
 			public SerialTerminal(string portName, int baudRate, Parity parity, int dataBits, StopBits stopBits)
