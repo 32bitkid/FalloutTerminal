@@ -188,21 +188,8 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
             var pos = IBM3151.Commands.SetCursorPosition(21, 45);
             _termlink.Connection.Write(pos + (char) Ascii.BS + '>' + new string(' ', 80 - 45) + pos);
 
-            byte[] command = new byte[255], cleanBuffer = new byte[80];
-            int index = 0, cmdLen = 0;
-            var cursorPosition = 0;
+			var guess = _termlink.Connection.GetString();
 
-            do
-            {
-                //while(_serial.BytesToRead == 0) { Thread.Sleep(500); }
-                var readLength = _termlink.Connection.Read(command, index, command.Length - index);
-                _termlink.Connection.Write(command, index, readLength);
-                index += readLength;
-
-            } while ((cmdLen = Array.IndexOf(command, Ascii.CR)) == -1);
-
-            var len = Unescape(command, 0, cmdLen, cleanBuffer);
-            var guess = Encoding.ASCII.GetString(cleanBuffer, 0, len).ToUpper();
             if (guess == _dump.CorrectPassword)
             {
                 return;
@@ -210,6 +197,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
             else
             {
                 var correct = _dump.Check(guess);
+				Console.WriteLine(correct);
             }
 
             _attempts -= 1;
@@ -217,25 +205,6 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
             
 
             Prompt();
-        }
-
-        private int Unescape(byte[] command, int start, int length, byte[] clean)
-        {
-            var cleanedLength = 0;
-
-            for(var i = start; i < length; i++)
-            {
-                if(command[i] >= 0x20 && command[i] <= 0x7e)
-                {
-                    clean[cleanedLength++] = command[i];
-                    continue;
-                }
-
-                if (command[i] == 0x08)
-                    cleanedLength--;
-            }
-
-            return cleanedLength;
         }
     }
 }

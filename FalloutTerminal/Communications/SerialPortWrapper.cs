@@ -8,6 +8,8 @@ namespace FalloutTerminal.Communications
 	
     class SerialPortWrapper : ISerialConnection
     {
+		public event EventHandler<EventArgs> Restart;
+		
         private readonly SerialPort _serialPort;
 
         public SerialPortWrapper(SerialPort serialPort)
@@ -42,6 +44,10 @@ namespace FalloutTerminal.Communications
         {
             return _serialPort.Read(buffer, offset, count);
         }
+		
+		public string GetString() {
+			throw new NotImplementedException();
+		}
 
         public void Dispose() { }
     }

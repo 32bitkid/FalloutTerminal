@@ -7,6 +7,7 @@ namespace FalloutTerminal.Communications
 {
     public class Fake3151Console : ISerialConnection
     {
+		public event EventHandler<EventArgs> Restart;
 
         public Fake3151Console()
         {
@@ -114,6 +115,10 @@ namespace FalloutTerminal.Communications
             buffer[offset] = (byte)Console.ReadKey(true).KeyChar;
             return 1;
         }
+		
+		public string GetString() {
+			throw new NotImplementedException();
+		}
 
         public void Dispose()
         {
