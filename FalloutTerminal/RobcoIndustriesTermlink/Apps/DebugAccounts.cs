@@ -9,6 +9,8 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 {
     class PasswordMemoryDump
     {
+		public delegate void WriteDelegate(string message);
+		
         private static readonly char[]
             Junk = new[] {
                 '!', '"', '\'', '$', '%', '#', '^', '&',
@@ -21,24 +23,54 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 
         private readonly int _rows;
         private readonly int _cols;
+		private readonly int _numberOfCols;
+		
         public string CorrectPassword { get; private set; }
         private readonly char[] _memory;
         private readonly string[] _dict;
 
         public int BaseMemoryAddress { get; private set; }
 
-        public PasswordMemoryDump(int rows, int cols, string[] dict)
+        public PasswordMemoryDump(int rows, int cols, int numberOfCols, string[] dict)
         {
             BaseMemoryAddress = _rnd.Next(0xC000, 0xFF00);
             _rows = rows;
             _cols = cols;
             _dict = dict;
-            _memory = new char[rows * cols];
+			_numberOfCols = numberOfCols;
+            _memory = new char[rows * cols * numberOfCols];
 
             JunkFill();
             CorrectPassword = _dict[_rnd.Next(_dict.Length)];
             FillTable();
         }
+		
+		public void Write(WriteDelegate funct) {
+			var sb = new StringBuilder();
+			
+			var bytesPerColumn = _rows * _cols;
+			
+			for (var currentRow = 0; currentRow < _rows; currentRow++)
+            {
+				for(var currentColumn = 0; currentColumn < _numberOfCols; currentColumn++) {
+					
+	                sb.AppendFormat("0x{0:X4} ", currentRow * _cols + BaseMemoryAddress + bytesPerColumn * currentColumn);
+	
+	                sb.Append(IBM3151.Commands.Intense);
+	                for (var columnIndex = 0; columnIndex < _cols; columnIndex++)
+	                    sb.Append(this[currentRow * _cols + columnIndex + bytesPerColumn * currentColumn]);
+					sb.Append(IBM3151.Commands.NotIntense);
+	                sb.Append("   ");
+				}
+
+	            if (currentRow != _rows - 1)
+                    sb.Append("\r\n");
+            }
+			
+			funct(sb.ToString());
+			
+			
+		}
 
         private void FillTable()
         {
@@ -48,7 +80,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
                                  if (word == CorrectPassword)
                                      return false;
                                  var n = CorrectPassword.Where((t, i) => word[i] == t).Count();
-                                 return n > 2 && n < 5;
+                                 return n >= 2 && n < 5;
                              }).OrderBy(a => Guid.NewGuid()).Take(10));
 			
 			wordlist.AddRange(_dict.Where(delegate(string word)
@@ -95,7 +127,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 
         private void JunkFill()
         {
-            for(var i = 0; i < _rows * _cols; i++)
+            for(var i = 0; i < _memory.Length; i++)
                 _memory[i] = Junk[_rnd.Next(Junk.Length)];
         }
 
@@ -117,12 +149,13 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
         private PasswordMemoryDump _dump;
         const int MaxRows = 16;
         const int MaxCols = 12;
+		const int NumCols = 2;
 
         public DebugAccounts(IRobcoIndustriesTermlinkProtocol termlink)
         {
             _termlink = termlink;
             _attempts = 4;
-            _dump = new PasswordMemoryDump(MaxRows, MaxCols * 2, Dictionary.Words6);
+            _dump = new PasswordMemoryDump(MaxRows, MaxCols, NumCols, Dictionary.Words6);
 
         }
 
@@ -157,45 +190,19 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 
         public void Launch()
         {
-            var sb = new StringBuilder();
+            _termlink.Connection.Write(IBM3151.Commands.ClearAll);
+            _termlink.Connection.Write(IBM3151.Commands.Intense);
+            _termlink.Connection.Write("ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL\r\n");
+            _termlink.Connection.Write("ENTER PASSWORD NOW\r\n\n");
 
-            sb.Append(IBM3151.Commands.ClearAll);
-            sb.Append(IBM3151.Commands.Intense);
-            sb.Append("ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL\r\n");
-            sb.Append("ENTER PASSWORD NOW\r\n\n");
-
-            sb.Append(IBM3151.Commands.NotIntense);
-
-            _termlink.Connection.Write(sb.ToString());
-            sb.Length = 0;
+            _termlink.Connection.Write(IBM3151.Commands.NotIntense);
 
             UpdateAttempts();
 
-            sb.Append("\r\n\n");
-
-            for (var i = 0; i < MaxRows; i++)
-            {
-                sb.AppendFormat("0x{0:X4} ", i * MaxCols + _dump.BaseMemoryAddress);
-
-                sb.Append(IBM3151.Commands.Intense);
-                for (var j = 0; j < MaxCols; j++)
-                    sb.Append(_dump[i * MaxCols + j]);
-                sb.Append("   ");
-                sb.Append(IBM3151.Commands.NotIntense);
-
-
-                sb.AppendFormat("0x{0:X4} ", i * MaxCols + _dump.BaseMemoryAddress + MaxRows * MaxCols);
-
-                sb.Append(IBM3151.Commands.Intense);
-                for (var j = 0; j < MaxCols; j++)
-                    sb.Append(_dump[i * MaxCols + j + MaxRows * MaxCols]);
-                sb.Append(IBM3151.Commands.NotIntense);
-
-                if (i != MaxRows - 1)
-                    sb.Append("\r\n");
-            }
-
-            _termlink.Connection.Write(sb.ToString());
+            _termlink.Connection.Write("\r\n\n");
+			
+			_dump.Write(_termlink.Connection.Write);
+         
             Prompt();
         }
 
