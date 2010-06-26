@@ -55,7 +55,8 @@ namespace FalloutTerminal.Communications
 			public readonly static string GetTerminalId = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.ExclaimationPoint, Ascii.Six });
 			public readonly static string Prompt = Encoding.ASCII.GetString(new byte[] { Ascii.CR, Ascii.ESC, Ascii.I, Ascii.GreaterThan });
 			public readonly static string ClearEOL = Encoding.ASCII.GetString(new byte[] { Ascii.ESC, Ascii.I });
-            public readonly static string Beep = Encoding.ASCII.GetString(new [] { Ascii.Bell }, 0, 1);
+            public readonly static string Beep = Encoding.ASCII.GetString(new [] { Ascii.Bell });
+			public readonly static string ResetBufferAddressMode = Encoding.ASCII.GetString(new [] { Ascii.ESC, Ascii.SP, Ascii.Z });
 
             public static string SetCursorPosition(int row, int column)
             {
@@ -79,6 +80,30 @@ namespace FalloutTerminal.Communications
             {
                 return SetCursorPosition(position.Row, position.Column);
             }	
+			
+            public static string SetBufferPosition(int row, int column)
+            {
+                if (row > 95 || column > 95)
+                    return SetCursorPositionEx(row, column);
+
+                return Encoding.ASCII.GetString(new [] { Ascii.ESC, Ascii.X, (byte)((row + 0x1F)), (byte)(column + 0x1F) }, 0, 4);
+            }
+
+            public static string SetBufferPositionEx(int row, int column)
+            {
+                var rowLow = (byte)(((row - 1) % 32) + 0x20);
+                var rowHi = (byte)(((row - 1) / 32) + 0x20);
+                var colLow = (byte)(((column - 1) % 32) + 0x40);
+                var colHi = (byte)(((column - 1) / 32) + 0x20);
+
+                return Encoding.ASCII.GetString(new [] { Ascii.ESC, Ascii.x, rowHi, rowLow, colHi, colLow }, 0, 6);
+            }
+
+            public static string SetBufferPosition(CursorPosition position)
+            {
+                return SetCursorPosition(position.Row, position.Column);
+            }	
+			
 		}
 		
 	

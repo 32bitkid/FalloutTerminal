@@ -48,6 +48,8 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			_serial.Write(StaticMessages.HackingLockout4 + IBM3151.Commands.NotIntense);
 			_serial.Write(new string('\n', 10));
 			
+			_accountsProtected = true;
+			
 			Thread.Sleep(TimeSpan.FromSeconds(10));
 		}
 
@@ -60,6 +62,8 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 				
 				if(_adminPassword != null && guess == _adminPassword) 
 				{
+					e.ReturnCode = ReturnCodes.Success;
+					e.Reply = string.Empty;
 					return;
 				}
 				
@@ -70,44 +74,59 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			}
 			
 			Lockout();
-			Boot(V300.RunModes.Normal);
 			
-			
+			e.ReturnCode = ReturnCodes.Failure;
+			_runMode = V300.RunModes.Normal;
+			e.Reply = StaticMessages.NormalBootMessage;
+			return;
         }
 
         void HandleSerialRestart (object sender, EventArgs e)
         {
-			Boot(RunModes.Normal);		
+			_runMode = V300.RunModes.Normal;
+			Thread.Sleep(500);
+			_serial.Write(StaticMessages.NormalBootMessage);	
         }
 
         void HandleParserHaltRestartNormal (object sender, ParserActionEventArgs e)
         {
-			Boot(RunModes.Normal);
-			e.Success = true;        	
+			_runMode = V300.RunModes.Normal;
+			Thread.Sleep(500);
+			e.Reply = StaticMessages.NormalBootMessage;
+			e.ReturnCode = ReturnCodes.Success;        	
         }
 
         void HandleParserRunDebugAccounts (object sender, ParserActionEventArgs e)
         {
        		if(_runMode != V300.RunModes.Maint || _accountsProtected) 
+			{
+				e.Reply = StaticMessages.AccessDenied;
 				return;
+			}
 			
-			e.Success = true;
-
-            new DebugAccounts(this).Launch();
+			e.ReturnCode = new DebugAccounts(this).Launch();
+			e.Reply = string.Empty;
+			if(e.ReturnCode == ReturnCodes.Success || e.ReturnCode == ReturnCodes.Failure) {
+				_runMode = V300.RunModes.Normal;
+				e.Reply = StaticMessages.NormalBootMessage;
+			}
         }
 
         void HandleParserSetFileProtection (object sender, ParserActionEventArgs e)
         {
      		if(new Regex(@"ACCOUNTS.F$", RegexOptions.IgnoreCase).IsMatch(e.Options)) {
-				e.Success = true;
+				e.ReturnCode = ReturnCodes.Success;
 				_accountsProtected = false;
 			}
+			e.Reply = (e.ReturnCode == ReturnCodes.Success) ? string.Empty : StaticMessages.BadCommand;
         }
 
         void HandleParserHaltRestartMaint (object sender, ParserActionEventArgs e)
         {
-			Boot(RunModes.Maint);
-			e.Success = true;
+			_runMode = V300.RunModes.Maint;
+			e.ReturnCode = ReturnCodes.Success;
+			e.Reply = StaticMessages.MaintainenceModeBootMessage;
+			Thread.Sleep(500);
         }
 
         public void Boot(RunModes runMode)
@@ -120,7 +139,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 				break;
             case RunModes.DebugAccounts:
                 new DebugAccounts(this).Launch();
-			    return;
+				break;
 			default:
 	            _serial.Write(StaticMessages.NormalBootMessage);
 				break;				
@@ -130,18 +149,26 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
         }
 		
 		public void Prompt() {
-			_serial.Write(IBM3151.Commands.Prompt);
-			
-			var command = _serial.GetString();
-			_serial.Write("\n");
-			
-			var reply = _parser.Parse(command);
-			
-			if(reply == null) 
-				return;
-			
-			_serial.Write(reply);
-			Prompt();
+			Console.WriteLine("ENTERING PROMPT!");
+			while(true) {
+				Console.WriteLine("p");
+				
+				_serial.Write(IBM3151.Commands.Prompt);
+				
+				var command = _serial.GetString();
+				
+				if(command == null) 
+					continue;
+				
+				_serial.Write("\n");
+
+				var reply = _parser.Parse(command);
+				
+				if(reply == null) 
+					break;
+				
+				_serial.Write(reply);
+			}
 		}
 		
 		public void Dispose ()

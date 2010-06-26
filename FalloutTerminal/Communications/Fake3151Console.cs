@@ -116,6 +116,10 @@ namespace FalloutTerminal.Communications
             return 1;
         }
 		
+		public string GetString(OnPressWorker worker) {
+			return GetString(false);
+		}
+		
 		public string GetString(bool masked) {
 			throw new NotImplementedException();
 		}

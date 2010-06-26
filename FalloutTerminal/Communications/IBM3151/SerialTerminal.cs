@@ -20,11 +20,13 @@ namespace FalloutTerminal.Communications
                 OperatingMode = IBM3151.OperatingModes.Echo;
 			}
 			
-			public string GetString() { return GetString(false); }
+			public string GetString() { return GetString(false, null); }
+			public string GetString(bool masked) { return GetString(masked, null); }
+			public string GetString(OnPressWorker worker) { return GetString(false, worker); }
 			
-			public string GetString(bool masked) {
+			public string GetString(bool masked, OnPressWorker worker) {
 				byte[] command = new byte[255], cleanBuffer = new byte[80];
-	            int index = 0, cmdLen = 0;
+	            int index = 0, cmdLen = 0, cleanLen = 0;
 	            var cursorPosition = 0;
 	
 	            do
@@ -52,16 +54,20 @@ namespace FalloutTerminal.Communications
 					}
 					
 					
+					index += readLength;
 					
-	                index += readLength;
+					if(worker != null) {
+						cleanLen = Unescape(command, 0, index, cleanBuffer);
+						worker(Encoding.ASCII.GetString(cleanBuffer, 0, cleanLen), this);
+					}
 	
 	            } while ((cmdLen = Array.IndexOf(command, Ascii.CR)) == -1);
 				
 				if(masked)
 					Write(new [] { Ascii.BS, Ascii.SP, Ascii.CR, Ascii.LF}, 0, 4);
 	
-	            var len = Unescape(command, 0, cmdLen, cleanBuffer);
-	            return Encoding.ASCII.GetString(cleanBuffer, 0, len).ToUpper();
+	            cleanLen = Unescape(command, 0, cmdLen, cleanBuffer);
+	            return Encoding.ASCII.GetString(cleanBuffer, 0, cleanLen).ToUpper();
 			}
 			
 	        private int Unescape(byte[] command, int start, int length, byte[] clean)

@@ -5,9 +5,12 @@ using System.Text.RegularExpressions;
 using FalloutTerminal.Communications;
 namespace FalloutTerminal.RobcoIndustriesTermlink
 {
+	public enum ReturnCodes { Success = -1, Failure = 0, AccessDenied, BadCommand, Abort }
+	
 	public class ParserActionEventArgs : EventArgs {
-		public bool Success { get; set; }
+		public ReturnCodes ReturnCode { get; set; }
 		public string Options { get; set; }
+		public string Reply { get; set; }
 	}
 	
 	public class V300Parser
@@ -45,8 +48,9 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			var user = match.Groups[1].ToString().ToUpper();
 			
 			if(user == "ADMIN" && LogonAdmin != null) {
-				LogonAdmin(this, new ParserActionEventArgs());
-				return null;
+				var e = new ParserActionEventArgs();
+				LogonAdmin(this, e);
+				return e.Reply;
 			}
 			
 			return StaticMessages.BadUser;
@@ -64,11 +68,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 				if(RunDebugAccounts != null) {
 					var e = new ParserActionEventArgs();
 					RunDebugAccounts(this, e);
-					if(e.Success)
-					{
-						if(HaltRestartNormal != null) HaltRestartNormal(this, new ParserActionEventArgs());
-						return null;
-					}
+					return e.Reply;
 				}
 				
 				return StaticMessages.AccessDenied;
@@ -91,15 +91,15 @@ namespace FalloutTerminal.RobcoIndustriesTermlink
 			case "FILE/PROTECTION":
 				e = new ParserActionEventArgs() { Options = options };
 				if(SetFileProtection != null) SetFileProtection(this, e);
-				return e.Success ? string.Empty : StaticMessages.BadCommand;
+				return e.Reply;
 			case "HALT RESTART/NORMAL":
 				e = new ParserActionEventArgs() { Options = options };
 				if(HaltRestartNormal != null) HaltRestartNormal(this, e);
-				return e.Success ? null : StaticMessages.AccessDenied;
+				return e.Reply;
 			case "HALT RESTART/MAINT":
 				e = new ParserActionEventArgs() { Options = options };
 				if(HaltRestartMaint != null) HaltRestartMaint(this, e);
-				return e.Success ? null : StaticMessages.AccessDenied;
+				return e.Reply;
 			}
 			
 			return StaticMessages.BadCommand;				

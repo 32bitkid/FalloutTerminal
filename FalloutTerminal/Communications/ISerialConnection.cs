@@ -2,6 +2,8 @@ using System;
 
 namespace FalloutTerminal.Communications
 {
+	public delegate void OnPressWorker(string input, ISerialConnection terminal);
+	
     public interface ISerialConnection : IDisposable
     {
 		event EventHandler<EventArgs> Restart;
@@ -13,7 +15,8 @@ namespace FalloutTerminal.Communications
         int Read(byte[] buffer, int offset, int count);
 		int BytesToRead { get; }
 		
-		string GetString();
+		string GetString(OnPressWorker worker);
 		string GetString(bool masked);
+		string GetString();
     }
 }

@@ -52,6 +52,11 @@ namespace FalloutTerminal.Communications
 		public string GetString() {
 			return GetString(false);
 		}
+		
+		public string GetString(OnPressWorker worker) {
+			return GetString(false);
+		}
+		
 
         public void Dispose() { }
     }
