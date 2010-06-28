@@ -87,13 +87,17 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 		private void FillTable ()
 		{
 			var wordlist = new List<string> ();
+			
+			// Get a bunch that have something in common
 			wordlist.AddRange (_dict.Where (delegate(string word) {
 				if (word == CorrectPassword)
 					return false;
 				var n = CorrectPassword.Where ((t, i) => word[i] == t).Count ();
-				return n >= 2 && n < 5;
+				return n >= 1 && n < 5;
 			}).OrderBy (a => Guid.NewGuid ()).Take (10));
 			
+			
+			// Get a few that have nothing in common
 			wordlist.AddRange (_dict.Where (delegate(string word) {
 				if (word == CorrectPassword)
 					return false;
@@ -101,6 +105,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 				return n == 0;
 			}).OrderBy (a => Guid.NewGuid ()).Take (4));
 			
+			// Get one thats really close
 			wordlist.AddRange (_dict.Where (delegate(string word) {
 				if (word == CorrectPassword)
 					return false;
@@ -108,27 +113,54 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 				return n == 5;
 			}).OrderBy (a => Guid.NewGuid ()).Take (1));
 			
+			// Add the correct password
 			wordlist.Add (CorrectPassword);
-			wordlist.OrderBy (a => Guid.NewGuid ());
+			
+			// Randomize the list (Yates shuffle)
+			for(var i = wordlist.Count - 1; i > 0; i--) {
+				var newIndex = _rnd.Next(0, i);
+				var temp = wordlist[i];
+				wordlist[i] = wordlist[newIndex];
+				wordlist[newIndex] = temp;
+			}
 			
 			var index = 0;
-			var max = wordlist.Count;
-			var spacesLeft = _memory.Length - (max * (CorrectPassword.Length + 1));
+			var totalWords = wordlist.Count;
+			var spacesLeft = _memory.Length;
 			
-			for (var i = 0; i < max; i++) {
-				var skip = _rnd.Next (3, spacesLeft / (max - i));
-				spacesLeft -= skip;
-				index += skip;
+			// Figure out how many spaces
+			foreach(var word in wordlist)
+				 spacesLeft -= word.Length + 1;
+		
+			// Set up skip table and distrubte the spaces evenly
+			var skipTable = new int[totalWords + 1];
+			for(var i = 0; i < totalWords + 1; i++)
+				skipTable[i] = spacesLeft / (totalWords + 1);
+			
+			// Randomize skip table;
+			for(var i = 0; i < 50; i++) {
+				var a = _rnd.Next(totalWords + 1);
+				var b = _rnd.Next(totalWords + 1);
 				
+				var range = Math.Min(skipTable[a], skipTable[b]);
+				
+				if(range < 1)
+					continue;
+				var delta = _rnd.Next(1,range / 2);
+				
+				skipTable[a] += delta;
+				skipTable[b] -= delta;
+			}
+			
+			for (var i = 0; i < totalWords; i++) {
+				index += skipTable[i];
 				_passwords.Add(new ValidPassCode(wordlist[i], index, wordlist[i].Length));
-				
 				index += CorrectPassword.Length + 1;
 			}
 			
+			// Write the 
 			foreach(var password in _passwords) 
 				password.Code.CopyTo (0, _memory, password.Position, password.Length);
-			
-			
 		}
 
 		public int Check (string guess)
@@ -208,7 +240,6 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 			_termlink.Connection.Write (string.Format ("{0} ATTEMPT(S) LEFT:", _attempts));
 			_termlink.Connection.Write (IBM3151.Commands.Intense);
 			
-			Console.WriteLine(_termlink.Connection);
 			for (var i = 0; i < _attempts; i++)
 				if (_termlink.Connection is IBM3151.SerialTerminal)
 					_termlink.Connection.Write (new byte[] { Ascii.SP, 254 }, 0, 2);
@@ -239,6 +270,7 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 
 		private ReturnCodes Prompt ()
 		{
+			Console.WriteLine (_dump.CorrectPassword);
 			while(true) {
 				var pos = IBM3151.Commands.SetCursorPosition (21, 45);
 				_termlink.Connection.Write (pos + (char)Ascii.BS + '>' + new string (' ', 80 - 45) + pos);
@@ -254,7 +286,6 @@ namespace FalloutTerminal.RobcoIndustriesTermlink.Apps
 					return ReturnCodes.Success;
 				} else {
 					var correct = _dump.Check(guess);
-					Console.WriteLine (_dump.CorrectPassword);
 					Console.WriteLine (correct);
 				}
 				
